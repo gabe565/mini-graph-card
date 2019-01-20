@@ -1,6 +1,6 @@
 export default class Graph {
   constructor(width, height, margin) {
-    this.coordinates = [];
+    this.coords = [];
     this.width = width - margin * 2;
     this.height = height - margin * 4;
     this.margin = margin;
@@ -23,8 +23,6 @@ export default class Graph {
 
   update(history, hours, detail) {
     history = history.filter(item => !Number.isNaN(Number(item.state)));
-    this.min = Math.min.apply(Math, history.map(item =>  Number(item.state)));
-    this.max = Math.max.apply(Math, history.map(item =>  Number(item.state)));
     const now = new Date().getTime();
 
     const reduce = (res, item, min = false) => {
@@ -46,14 +44,16 @@ export default class Graph {
         return entry.reduce((res, item) => reduce(res, item, true), []);
       });
     }
-    this.coordinates = history;
+    this.coords = this._calcCoords(history, hours, detail);
+
+    this.min = Math.min.apply(Math, this.coords.map(item =>  Number(item[1])));
+    this.max = Math.max.apply(Math, this.coords.map(item =>  Number(item[1])));
   }
 
-  _calcCoords(hours, detail = 1, {coordinates} = this) {
+  _calcCoords(history, hours, detail = 1) {
     const coords = []
     let xRatio = this.width / (hours - (detail === 1 ? 1 : 0));
     xRatio = isFinite(xRatio) ? xRatio : this.width;
-    const yRatio = ((this.max - this.min) / this.height) || 1;
 
     const getCoords = (item, i, offset = 0, depth = 1) => {
       if (depth > 1)
@@ -62,17 +62,20 @@ export default class Graph {
         return (sum + parseFloat(entry.state));
       }, 0) / item.length;
       const x = xRatio * (i + (offset / 6)) + this.margin;
-      const y = this.height - ((average - this.min) / yRatio) + this.margin * 2;
-      coords.push([x,Math.round(y)]);
+      coords.push([x,average]);
     }
-    coordinates.forEach((item, i) => getCoords(item, i, 0, detail))
+    history.forEach((item, i) => getCoords(item, i, 0, detail))
     if (coords.length === 1) coords[1] = [this.width + this.margin, coords[0][1]];
     coords.push([this.width + this.margin, coords[coords.length -1][1]]);
     return coords;
   }
 
   getPath(hours, detail = 1) {
-    const coords = this._calcCoords(hours, detail);
+    const coords = this.coords;
+    const yRatio = ((this.max - this.min) / this.height) || 1;
+    coords.forEach(coord => {
+      coord[1] = this.height - ((coord[1] - this.min) / yRatio) + this.margin * 2;
+    });
     let next, Z;
     const X = 0;
     const Y = 1;
