@@ -1,13 +1,27 @@
 export default class Graph {
   constructor(width, height, margin) {
+    this.coordinates = [];
     this.width = width - margin * 2;
     this.height = height - margin * 4;
     this.margin = margin;
-    this.min = 0;
-    this.max = 0;
+    this._max = 0;
+    this._min = 0;
   }
 
-  coordinates(history, hours, detail = 1) {
+  get max() {
+    return this._max;
+  }
+  set max(max) {
+    this._max = max;
+  }
+  get min() {
+    return this._min;
+  }
+  set min(min) {
+    this._min = min;
+  }
+
+  update(history, hours, detail) {
     history = history.filter(item => !Number.isNaN(Number(item.state)));
     this.min = Math.min.apply(Math, history.map(item =>  Number(item.state)));
     this.max = Math.max.apply(Math, history.map(item =>  Number(item.state)));
@@ -32,10 +46,10 @@ export default class Graph {
         return entry.reduce((res, item) => reduce(res, item, true), []);
       });
     }
-    return this._calcCoords(history, hours, detail);
+    this.coordinates = history;
   }
 
-  _calcCoords(history, hours, detail = 1) {
+  _calcCoords(hours, detail = 1, {coordinates} = this) {
     const coords = []
     let xRatio = this.width / (hours - (detail === 1 ? 1 : 0));
     xRatio = isFinite(xRatio) ? xRatio : this.width;
@@ -49,22 +63,22 @@ export default class Graph {
       }, 0) / item.length;
       const x = xRatio * (i + (offset / 6)) + this.margin;
       const y = this.height - ((average - this.min) / yRatio) + this.margin * 2;
-      coords.push([x,y]);
+      coords.push([x,Math.round(y)]);
     }
-
-    history.forEach((item, i) => getCoords(item, i, 0, detail))
+    coordinates.forEach((item, i) => getCoords(item, i, 0, detail))
     if (coords.length === 1) coords[1] = [this.width + this.margin, coords[0][1]];
     coords.push([this.width + this.margin, coords[coords.length -1][1]]);
     return coords;
   }
 
-  getPath(coords) {
+  getPath(hours, detail = 1) {
+    const coords = this._calcCoords(hours, detail);
     let next, Z;
-    let X = 0;
-    let Y = 1;
+    const X = 0;
+    const Y = 1;
     let path = '';
     let last = coords.filter(Boolean)[0]
-    path += `M ${last[X]},${last[Y]}`;
+    path += `M${last[X]},${last[Y]}`;
 
     coords.forEach(point => {
       next = point;
