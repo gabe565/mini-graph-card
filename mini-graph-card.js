@@ -75,7 +75,6 @@ class MiniGraphCard extends LitElement {
 
     this.style = 'display: flex; flex-direction: column;';
     const conf = {
-      animate: true,
       detail: 1,
       font_size: FONT_SIZE,
       height: 100,
@@ -244,7 +243,7 @@ class MiniGraphCard extends LitElement {
             ?init=${this.length[i]}
             stroke-dasharray=${this.length[i]}
             stroke-dashoffset=${this.length[i]}
-            style="animation-delay: ${i * 0.75 + 's'}"
+            style="animation-delay: ${i * 0.5 + 's'}"
             d=${this.line[i]}
             fill='none'
             stroke=${this.computeColor(this.entities[i], i)}
