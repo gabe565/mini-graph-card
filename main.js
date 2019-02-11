@@ -89,6 +89,8 @@ class MiniGraphCard extends LitElement {
       throw new Error(`The "entity" option was removed, please use "entities".\n See ${URL_DOCS}`);
     if (!Array.isArray(config.entities))
       throw new Error(`Please provide the "entities" option as a list.\n See ${URL_DOCS}`);
+    if (config.line_color_above || config.line_color_below)
+      throw new Error(`"line_color_above/line_color_below" was removed, please use "line_color_threshold".\n See ${URL_DOCS}`);
 
     const conf = {
       animate: false,
@@ -98,8 +100,7 @@ class MiniGraphCard extends LitElement {
       hours_to_show: 24,
       points_per_hour: 1,
       line_color: [...DEFAULT_COLORS],
-      line_color_above: [],
-      line_color_below: [],
+      line_color_threshold: [],
       line_width: 5,
       more_info: true,
       ...config,
@@ -115,8 +116,7 @@ class MiniGraphCard extends LitElement {
 
     conf.font_size = (config.font_size / 100) * FONT_SIZE || FONT_SIZE;
     conf.hours_to_show = Math.floor(Number(conf.hours_to_show)) || 24;
-    conf.line_color_above.reverse();
-    conf.line_color_below.reverse();
+    conf.line_color_threshold.reverse();
     if (!this.Graph) {
       this.Graph = [];
       conf.entities.forEach((entity, index) => {
@@ -156,10 +156,10 @@ class MiniGraphCard extends LitElement {
       <ha-card
         class='flex'
         ?group=${config.group}
-        ?fill=${this.config.show.graph && this.config.show.fill}
-        ?points=${this.config.show.points === 'hover'}
-        ?labels=${this.config.show.labels === 'hover'}
-        ?gradient=${this.config.show.gradient}
+        ?fill=${config.show.graph && config.show.fill}
+        ?points=${config.show.points === 'hover'}
+        ?labels=${config.show.labels === 'hover'}
+        ?gradient=${config.line_color_threshold.length > 0}
         ?more-info=${config.more_info}
         style='font-size: ${config.font_size}px;'
         @click=${e => this.handlePopup(e, this.entity[0])}>
@@ -412,17 +412,13 @@ class MiniGraphCard extends LitElement {
   }
 
   computeColor(inState, i) {
-    const { line_color_above, line_color_below, line_color } = this.config;
+    const { line_color_threshold, line_color } = this.config;
     const state = Number(inState) || 0;
-    const above = {
-      color: undefined,
-      ...line_color_above.find(ele => state > ele.value),
+    const threshold = {
+      color: line_color[i],
+      ...line_color_threshold.find(ele => ele.value < state),
     };
-    const below = {
-      color: undefined,
-      ...line_color_below.find(ele => state < ele.value),
-    };
-    return above.color || below.color || line_color[i] || line_color[0];
+    return threshold.color || line_color[0];
   }
 
   computeName(index) {
@@ -479,10 +475,9 @@ class MiniGraphCard extends LitElement {
         if (config.show.points)
           this.points[index] = this.Graph[index].getPoints();
 
-        if (config.show.gradient)
+        if (config.line_color_threshold.length > 0)
           this.gradient[index] = this.Graph[index].computeGradient(
-            config.line_color_above,
-            config.line_color_below,
+            config.line_color_threshold,
             config.line_color[index] || config.line_color[0],
           );
       });

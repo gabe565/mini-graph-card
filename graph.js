@@ -103,13 +103,12 @@ export default class Graph {
     return path;
   }
 
-  computeGradient(above, below, fallback) {
+  computeGradient(thresholds, fallback) {
     const length = 100 / this.coords.length;
     const gradient = this.coords.map((coord, i) => ({
       offset: length * i + length,
       color: fallback,
-      ...below.find(ele => ele.value > coord[V]),
-      ...above.find(ele => ele.value < coord[V]),
+      ...thresholds.find(ele => ele.value < coord[V]),
     }));
     return gradient;
   }
