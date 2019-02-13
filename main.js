@@ -116,7 +116,7 @@ class MiniGraphCard extends LitElement {
 
     conf.font_size = (config.font_size / 100) * FONT_SIZE || FONT_SIZE;
     conf.hours_to_show = Math.floor(Number(conf.hours_to_show)) || 24;
-    conf.color_thresholds.reverse();
+    conf.color_thresholds.sort((a, b) => b.value - a.value);
     if (!this.Graph) {
       this.Graph = [];
       conf.entities.forEach((entity, index) => {
