@@ -90,7 +90,7 @@ class MiniGraphCard extends LitElement {
     if (!Array.isArray(config.entities))
       throw new Error(`Please provide the "entities" option as a list.\n See ${URL_DOCS}`);
     if (config.line_color_above || config.line_color_below)
-      throw new Error(`"line_color_above/line_color_below" was removed, please use "line_color_threshold".\n See ${URL_DOCS}`);
+      throw new Error(`"line_color_above/line_color_below" was removed, please use "color_thresholds".\n See ${URL_DOCS}`);
 
     const conf = {
       animate: false,
@@ -100,7 +100,7 @@ class MiniGraphCard extends LitElement {
       hours_to_show: 24,
       points_per_hour: 1,
       line_color: [...DEFAULT_COLORS],
-      line_color_threshold: [],
+      color_thresholds: [],
       line_width: 5,
       more_info: true,
       ...config,
@@ -116,7 +116,7 @@ class MiniGraphCard extends LitElement {
 
     conf.font_size = (config.font_size / 100) * FONT_SIZE || FONT_SIZE;
     conf.hours_to_show = Math.floor(Number(conf.hours_to_show)) || 24;
-    conf.line_color_threshold.reverse();
+    conf.color_thresholds.reverse();
     if (!this.Graph) {
       this.Graph = [];
       conf.entities.forEach((entity, index) => {
@@ -159,7 +159,7 @@ class MiniGraphCard extends LitElement {
         ?fill=${config.show.graph && config.show.fill}
         ?points=${config.show.points === 'hover'}
         ?labels=${config.show.labels === 'hover'}
-        ?gradient=${config.line_color_threshold.length > 0}
+        ?gradient=${config.color_thresholds.length > 0}
         ?more-info=${config.more_info}
         style='font-size: ${config.font_size}px;'
         @click=${e => this.handlePopup(e, this.entity[0])}>
@@ -298,13 +298,14 @@ class MiniGraphCard extends LitElement {
 
   renderSvgPoints(points, i) {
     if (!points) return;
+    const color = this.computeColor(this.entity[i].state, i);
     return svg`
       <g class='line--points'
         ?init=${this.length[i]}
         anim=${this.config.animate && this.config.show.points !== 'hover'}
         style="animation-delay: ${this.config.animate ? `${i * 0.5 + 0.5}s` : '0s'}"
-        fill=${this.computeColor(this.entity[i].state, i)}
-        stroke=${this.computeColor(this.entity[i].state, i)}
+        fill=${color}
+        stroke=${color}
         stroke-width=${this.config.line_width / 2}>
         ${points.map((point, num) => svg`
           <circle
@@ -412,11 +413,11 @@ class MiniGraphCard extends LitElement {
   }
 
   computeColor(inState, i) {
-    const { line_color_threshold, line_color } = this.config;
+    const { color_thresholds, line_color } = this.config;
     const state = Number(inState) || 0;
     const threshold = {
       color: line_color[i],
-      ...line_color_threshold.find(ele => ele.value < state),
+      ...color_thresholds.find(ele => ele.value < state),
     };
     return threshold.color || line_color[0];
   }
@@ -475,9 +476,9 @@ class MiniGraphCard extends LitElement {
         if (config.show.points)
           this.points[index] = this.Graph[index].getPoints();
 
-        if (config.line_color_threshold.length > 0)
+        if (config.color_thresholds.length > 0)
           this.gradient[index] = this.Graph[index].computeGradient(
-            config.line_color_threshold,
+            config.color_thresholds,
             config.line_color[index] || config.line_color[0],
           );
       });
